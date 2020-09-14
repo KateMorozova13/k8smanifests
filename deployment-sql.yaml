@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sql
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: mysql        
+    spec:
+      containers:
+      - image: mysql:5.6 
+        name: mysql
+        env: 
+        - name: MYSQL_ROOT_PASSWORD 
+          valueFrom:
+            secretKeyRef:
+              name: passwordsql
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: sqlstorage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: sqlstorage
+        persistentVolumeClaim:
+          claimName: pvcformysql
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvformysql
+  labels:
+    app: wordpress
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes: 
+    - ReadWriteMany
+  storageClassName: standard
+  hostPath:
+    path: /data/mysql 
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvcformysql
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-mysql
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: wordpress
+    tier: mysql
+  type: ClusterIP
+---

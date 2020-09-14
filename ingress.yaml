@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  name: forwordpress
+spec:
+  rules:
+  - host: myhomework.info
+    http:
+      paths:
+      - backend:
+          serviceName: wordpress
+          servicePort: 80
+---
